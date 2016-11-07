@@ -225,7 +225,7 @@ func TestPolicyMerge(t *testing.T) {
 
 	type tcase struct {
 		path      string
-		parameter string
+		parameter []string
 		allowed   bool
 		rootPrivs bool
 	}
@@ -237,31 +237,27 @@ func TestPolicyMerge(t *testing.T) {
 	}
 
 	tcases := []tcase{
-		{"foo/bar", "baz", false, false},
-		{"foo/bar", "zip", false, false},
-		{"hello/universe", "bob", true, false},
-		{"hello/universe", "tom", true, false},
-		{"rainy/day", "bob", true, false},
-		{"rainy/day", "tom", true, false},
-		{"cool/bike", "four", false, false},
-		{"cool/bike", "frank", false, false},
-		{"clean/bed", "one", false, false},
-		{"clean/bed", "two", false, false},
-		{"coca/cola", "john", false, false},
-		{"coca/cola", "two", false, false},
+		{"foo/bar", []string{"baz", "zip"}, false, false},
+		{"hello/universe", []string{"bob", "tom"}, true, false},
+		{"rainy/day", []string{"bob", "tom"}, true, false},
+		{"cool/bike", []string{"four", "frank"}, false, false},
+		{"clean/bed", []string{"one"}, false, false},
+		{"coca/cola", []string{"john", "two"}, false, false},
 	}
 
 	for _, tc := range tcases {
 		request := logical.Request{Path: tc.path, Data: make(map[string]interface{})}
-		request.Data[tc.parameter] = ""
-		for _, op := range toperations {
-			request.Operation = op
-			allowed, rootPrivs := acl.AllowOperation(&request)
-			if allowed != tc.allowed {
-				t.Fatalf("bad: case %#v: %v, %v", tc, allowed, rootPrivs)
-			}
-			if rootPrivs != tc.rootPrivs {
-				t.Fatalf("bad: case %#v: %v, %v", tc, allowed, rootPrivs)
+		for _, parameter := range tc.parameter {
+			request.Data[parameter] = ""
+			for _, op := range toperations {
+				request.Operation = op
+				allowed, rootPrivs := acl.AllowOperation(&request)
+				if allowed != tc.allowed {
+					t.Fatalf("bad: case %#v: %v, %v", tc, allowed, rootPrivs)
+				}
+				if rootPrivs != tc.rootPrivs {
+					t.Fatalf("bad: case %#v: %v, %v", tc, allowed, rootPrivs)
+				}
 			}
 		}
 	}
