@@ -56,8 +56,6 @@ type Policy struct {
 	Raw   string
 }
 
-/*
- */
 // PathCapabilities represents a policy for a path in the namespace.
 type PathCapabilities struct {
 	Prefix       string
@@ -67,6 +65,8 @@ type PathCapabilities struct {
 	Glob         bool
 }
 
+// Permissions holds Policy parameters that are Allowed or Denied
+// They are mapped to an empty struct for future additions
 type Permissions struct {
 	CapabilitiesBitmap uint32
 	AllowedParameters  map[string]struct{}
@@ -115,8 +115,6 @@ func Parse(rules string) (*Policy, error) {
 }
 
 func parsePaths(result *Policy, list *ast.ObjectList) error {
-	// specifically how can we access the key value pairs for
-	// permissions
 	paths := make([]*PathCapabilities, 0, len(list.Items))
 	for _, item := range list.Items {
 		key := "path"
@@ -126,7 +124,7 @@ func parsePaths(result *Policy, list *ast.ObjectList) error {
 		valid := []string{
 			"policy",
 			"capabilities",
-			"permissions", // added here to validate
+			"permissions",
 		}
 		if err := checkHCLKeys(item.Val, valid); err != nil {
 			return multierror.Prefix(err, fmt.Sprintf("path %q:", key))
@@ -169,8 +167,8 @@ func parsePaths(result *Policy, list *ast.ObjectList) error {
 			}
 		}
 
-		// Initialize the map
 		pc.Permissions.CapabilitiesBitmap = 0
+		// create the capabilities bit map
 		for _, cap := range pc.Capabilities {
 			switch cap {
 			// If it's deny, don't include any other capability
